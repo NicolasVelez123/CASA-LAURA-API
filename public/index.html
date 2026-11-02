@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Panel en tiempo real - Casa Laura</title>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 640px; margin: 2rem auto; padding: 0 1rem; }
+    #estado { font-weight: bold; }
+    ul { list-style: none; padding: 0; }
+    li { padding: .6rem .8rem; margin: .4rem 0; border-radius: 6px; background: #eef2f7; }
+    li.creada { border-left: 5px solid #2e9e5b; }
+    li.modificada { border-left: 5px solid #d89a1a; }
+    li.cancelada { border-left: 5px solid #c0392b; }
+    small { color: #555; }
+  </style>
+</head>
+<body>
+  <h1>Hotel Casa Laura: reservas en vivo</h1>
+  <p>Conexión: <span id="estado">conectando...</span></p>
+  <ul id="lista"></ul>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const socket = io();
+    const estado = document.getElementById('estado');
+    const lista = document.getElementById('lista');
+
+    socket.on('connect', () => { estado.textContent = 'conectado'; });
+    socket.on('disconnect', () => { estado.textContent = 'desconectado'; });
+
+    function mostrar(tipo, texto, reserva) {
+      const li = document.createElement('li');
+      li.className = tipo;
+      // textContent (no innerHTML): así un nombre malicioso no se interpreta como HTML
+      li.textContent = `${texto}: habitación ${reserva.habitacion}, ${reserva.huesped} `
+        + `(${reserva.fecha_entrada} a ${reserva.fecha_salida}) `;
+      const hora = document.createElement('small');
+      hora.textContent = new Date().toLocaleTimeString();
+      li.appendChild(hora);
+      lista.prepend(li);
+    }
+
+    socket.on('reserva:creada', (r) => mostrar('creada', 'Nueva reserva', r));
+    socket.on('reserva:modificada', (r) => mostrar('modificada', 'Reserva modificada', r));
+    socket.on('reserva:cancelada', (r) => mostrar('cancelada', 'Reserva cancelada', r));
+  </script>
+</body>
+</html>
